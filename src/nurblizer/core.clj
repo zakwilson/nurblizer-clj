@@ -20,12 +20,14 @@
 (defn nurble [text]
   (let [words (-> text
                   str/lower-case
-                  (str/replace #"[^a-z ]" "")
-                  (str/split #"\s"))]
+                  (str/replace #"[^a-z \n]" "")
+                  (str/split #"\b"))]
     (->> (for [w words]
-           (if (nouns w)
-             "<span class=\"nurble\">nurble</span>"
-             (str/upper-case w)))
+           (cond (nouns w) "<span class=\"nurble\">nurble</span>"
+                 true (->> w
+                           (replace {\newline "<br />"})
+                           (apply str)
+                           (str/upper-case))))
          (interpose \space)
          (apply str))))
 
