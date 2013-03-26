@@ -11,35 +11,25 @@
 
 ; Read in the nouns file on startup
 (def nouns
-  (map (comp str/trim str/lower-case)
-       (-> (slurp (clojure.java.io/resource "nouns.txt"))
-           (str/split #"\n"))))
+  (set (map (comp str/trim str/lower-case)
+                  (-> (slurp (clojure.java.io/resource "nouns.txt"))
+                      (str/split #"\n")))))
 
 
-; Nurblize function: now with recursion!
-(defn nurble
-  ([text]
-  ; First run: prepare the wordlist and upper-case the text.
-   (let [words (-> text
-                   str/lower-case
-                   (str/replace #"[^a-z ]" "")
-                   (str/split #"\s"))]
-     (nurble (str/upper-case text) words)))
+; Nurblize function: now using a set!
+(defn nurble [text]
+  (let [words (-> text
+                  str/lower-case
+                  (str/replace #"[^a-z ]" "")
+                  (str/split #"\s"))]
+    (->> (for [w words]
+           (if (nouns w)
+             "<span class=\"nurble\">nurble</span>"
+             (str/upper-case w)))
+         (interpose \space)
+         (apply str))))
 
-  ([text words]
-  ; Recursively update <text> by replacing each <word> of <words> iff <word> is in nouns
-   (if (not (empty? words))
-     (let [w (first words)
-           pattern (re-pattern (str "(?i)(\\b)" w "(\\b)"))
-           replacement "$1<span class=\"nurble\">nurble</span>$2"
-           text (if (some (partial = w) nouns)
-                  (str/replace text pattern replacement)
-                  text)]
-       (recur text (rest words)))
-     (str/replace text #"\n" "<br>"))))
-
-
-; Define handlers
+; Handlers
 (defn index-view []
   (render "index" {}))
 
